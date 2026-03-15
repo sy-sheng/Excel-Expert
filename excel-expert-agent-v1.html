@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel Expert · Audit Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0a0a0a;
+  --surface:  #121412;
+  --surface2: #181a17;
+  --surface3: #1d201c;
+  --border:   #242622;
+  --border-l: #2c2f2a;
+  --accent:   #c1ff33;
+  --adim:     #85b320;
+  --teal:     #4ec9b0;
+  --warn:     #f0c040;
+  --purple:   #c084fc;
+  --text:     #f5f5f7;
+  --muted:    #a1a1a6;
+  --mid:      #8a9278;
+  --error:    #f07070;
+  --code-bg:  #080808;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 450;
+  line-height: 1.6;
+  letter-spacing: 0.015em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* subtle grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: .22;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ─────────────────────────────── */
+header {
+  position: relative; z-index: 20;
+  padding: 14px 40px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-size: 16px; font-weight: 600; color: var(--accent); letter-spacing: -.3px;
+}
+.logo-sub {
+  font-size: 10px; color: var(--muted); letter-spacing: 3px;
+  text-transform: uppercase; margin-left: 10px; font-weight: 400;
+}
+.header-r { display: flex; align-items: center; gap: 14px; }
+.model-pill {
+  font-size: 10px; font-family: 'DM Mono', monospace; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--purple);
+  border: 1px solid rgba(192,132,252,.3); border-radius: 20px; padding: 3px 10px;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+/* ── NAV ─────────────────────────────────── */
+nav {
+  position: relative; z-index: 20;
+  display: flex; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+}
+.nav-btn {
+  padding: 11px 20px;
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer; margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+}
+.nav-btn:hover { color: var(--text); }
+.nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.nav-btn.push { margin-left: auto; }
+
+/* ── PAGES ───────────────────────────────── */
+.page {
+  display: none;
+  position: relative; z-index: 1;
+  max-width: 840px; width: 100%;
+  margin: 0 auto;
+  padding: 28px 40px 48px;
+  flex-direction: column;
+  gap: 14px;
+}
+.page.active { display: flex; }
+
+/* ── SECTIONS (blocks within a page) ─────── */
+.block {
+  background: var(--surface);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.block-head {
+  padding: 10px 16px;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.block-body { padding: 14px 16px; }
+
+.tag {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); font-weight: 400;
+}
+.tag-green  { color: var(--accent); }
+.tag-teal   { color: var(--teal); }
+.tag-warn   { color: var(--warn); }
+.tag-purple { color: var(--purple); }
+
+/* ── CHIPS ───────────────────────────────── */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border-l); border-radius: 20px;
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  color: var(--muted); cursor: pointer; background: transparent;
+  transition: all .12s;
+}
+.chip:hover { border-color: var(--adim); color: var(--text); }
+.chip.on { border-color: var(--accent); color: var(--accent); background: rgba(184,240,62,.07); }
+
+/* ── INPUT ───────────────────────────────── */
+.input-wrap { background: var(--surface); border-radius: 6px; overflow: hidden; }
+.input-head {
+  padding: 10px 16px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.scene-pill {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent);
+}
+textarea {
+  width: 100%; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 15px; font-weight: 400; line-height: 1.6;
+  padding: 14px 16px; resize: none;
+}
+textarea::placeholder { color: var(--muted); }
+.input-foot {
+  padding: 9px 16px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ── BUTTONS ─────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; border-radius: 4px; cursor: pointer;
+  font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 8px 16px; white-space: nowrap;
+  transition: all .14s;
+}
+.btn-primary { background: var(--accent); color: #0c0d0c; }
+.btn-primary:hover:not(:disabled) { opacity: .85; }
+.btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-l); color: var(--mid);
+}
+.btn-ghost:hover { border-color: var(--adim); color: var(--text); }
+.btn-warn  { background: transparent; border: 1px solid var(--warn);   color: var(--warn); }
+.btn-teal  { background: transparent; border: 1px solid var(--teal);   color: var(--teal); }
+.btn-purple{ background: transparent; border: 1px solid var(--purple); color: var(--purple); }
+.btn-warn:hover:not(:disabled)  { background: rgba(240,192,64,.07); }
+.btn-teal:hover:not(:disabled)  { background: rgba(78,201,176,.07); }
+.btn-purple:hover:not(:disabled){ background: rgba(192,132,252,.07); }
+.btn-warn:disabled,.btn-teal:disabled,.btn-purple:disabled { opacity:.35; cursor:not-allowed; }
+.btn-sm { padding: 6px 12px; font-size: 9px; }
+
+/* ── RESPONSE ─────────────────────────────── */
+.resp {
+  background: var(--surface); border-radius: 6px;
+  overflow: hidden; animation: rise .2s ease;
+}
+.resp.r-warn   { box-shadow: inset 0 0 0 1px rgba(240,192,64,.25); }
+.resp.r-teal   { box-shadow: inset 0 0 0 1px rgba(78,201,176,.25); }
+.resp.r-purple { box-shadow: inset 0 0 0 1px rgba(192,132,252,.25); }
+@keyframes rise { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+.resp-head {
+  padding: 10px 16px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.resp-body {
+  padding: 16px 18px;
+  font-size: 15px; line-height: 1.7; color: var(--text); font-weight: 450;
+}
+.resp-body h3 {
+  font-size: 15px; font-weight: 600; color: var(--accent);
+  margin: 16px 0 6px; letter-spacing: .2px;
+}
+.resp-body h3:first-child { margin-top: 0; }
+.resp-body p  { margin-bottom: 8px; }
+.resp-body p:last-child { margin-bottom: 0; }
+.resp-body ul { list-style: none; padding: 0; margin: 4px 0 9px; }
+.resp-body li {
+  padding: 2px 0 2px 14px; position: relative;
+  color: var(--mid); font-size: 12px;
+}
+.resp-body li::before {
+  content: '–'; position: absolute; left: 0;
+  color: var(--adim); font-size: 11px; top: 3px;
+}
+.code-block {
+  background: var(--code-bg);
+  border-left: 3px solid var(--accent); border-radius: 4px;
+  padding: 10px 12px 10px 14px;
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent);
+  margin: 8px 0; overflow-x: auto; white-space: pre; line-height: 1.55;
+  position: relative;
+}
+.copy-btn {
+  position: absolute; top: 6px; right: 8px;
+  background: var(--surface2); border: 1px solid var(--border-l);
+  color: var(--muted); font-family: 'DM Mono', monospace;
+  font-size: 8px; padding: 2px 7px; border-radius: 3px;
+  cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
+  transition: all .12s;
+}
+.copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+.action-bar {
+  display: flex; gap: 7px; flex-wrap: wrap; align-items: center;
+  padding: 9px 16px; background: var(--surface2);
+}
+.action-hint { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-left: auto; }
+
+/* ── LOADING / ERROR ─────────────────────── */
+.loading {
+  padding: 20px 16px;
+  display: flex; align-items: center; gap: 10px;
+  color: var(--muted); font-size: 11px; font-family: 'DM Mono', monospace;
+}
+.dots span {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: var(--accent); display: inline-block;
+  animation: bop 1.2s ease-in-out infinite;
+}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes bop {0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+.err-msg { padding: 12px 16px; color: var(--error); font-size: 12px; font-family: 'DM Mono', monospace; }
+
+/* ── UPLOAD ──────────────────────────────── */
+.drop-zone {
+  border: 1px dashed var(--border-l); border-radius: 4px;
+  padding: 14px 16px; text-align: center;
+  cursor: pointer; transition: border-color .15s; position: relative;
+}
+.drop-zone:hover { border-color: var(--adim); }
+.drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.drop-text {
+  font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace;
+  line-height: 1.8; pointer-events: none;
+}
+.data-preview {
+  background: var(--code-bg);
+  border-left: 3px solid var(--teal); border-radius: 3px;
+  padding: 8px 10px; margin-top: 8px;
+  font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent);
+  max-height: 90px; overflow-y: auto; white-space: pre;
+}
+.dp-warn   { border-left-color: var(--warn); }
+.dp-purple { border-left-color: var(--purple); }
+
+/* ── DUAL GRID ───────────────────────────── */
+.dual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.slot-label {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px;
+}
+
+/* ── EXAMPLES ────────────────────────────── */
+.example-list { display: flex; flex-direction: column; gap: 5px; }
+.example {
+  padding: 9px 13px;
+  background: var(--surface2); border-radius: 4px;
+  font-size: 12px; color: var(--mid); cursor: pointer;
+  display: flex; gap: 8px; align-items: flex-start;
+  transition: background .12s, color .12s;
+}
+.example:hover { background: var(--surface3); color: var(--text); }
+.example::before {
+  content: '↗'; font-size: 10px; color: var(--adim); flex-shrink: 0; margin-top: 1px;
+}
+
+/* ── KB ──────────────────────────────────── */
+.kb-item {
+  background: var(--surface2); border-radius: 4px;
+  padding: 9px 12px; margin-bottom: 6px; position: relative;
+}
+.kb-item-tag {
+  font-size: 9px; font-family: 'DM Mono', monospace;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--teal); margin-bottom: 3px;
+}
+.kb-item-text { font-size: 12px; color: var(--mid); line-height: 1.5; padding-right: 22px; }
+.kb-del {
+  position: absolute; top: 7px; right: 10px;
+  background: transparent; border: none;
+  color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1;
+  transition: color .12s;
+}
+.kb-del:hover { color: var(--error); }
+.kb-badge {
+  display: inline-block; font-size: 9px; font-family: 'DM Mono', monospace;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--teal); border: 1px solid var(--teal);
+  border-radius: 20px; padding: 1px 8px;
+  opacity: 0; transition: opacity .3s; margin-left: 8px;
+}
+.kb-badge.show { opacity: 1; }
+
+/* ── FORM FIELDS ─────────────────────────── */
+.field {
+  background: var(--surface2); border: 1px solid var(--border-l);
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 12px; padding: 8px 11px; border-radius: 4px;
+  outline: none; width: 100%; transition: border-color .15s; margin-bottom: 7px;
+}
+.field:focus { border-color: var(--accent); }
+.field::placeholder { color: var(--muted); }
+.field-area { resize: vertical; min-height: 64px; line-height: 1.5; }
+.mono-field {
+  font-family: 'DM Mono', monospace; font-size: 12px;
+}
+select.field { cursor: pointer; }
+
+/* ── PROCESS STEPS TRACE ─────────────────── */
+.step-trace { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; }
+.step-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 12px; color: var(--mid); line-height: 1.5;
+}
+.step-num-badge {
+  flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--adim); color: #0c0d0c;
+  font-size: 9px; font-weight: 600; font-family: 'DM Mono', monospace;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+
+/* ── VERDICT ─────────────────────────────── */
+.verdict {
+  padding: 11px 16px; border-radius: 4px;
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  display: flex; align-items: center; gap: 9px; margin-top: 10px;
+}
+.verdict.pass   { background:rgba(184,240,62,.07); border:1px solid rgba(184,240,62,.3); color:var(--accent); }
+.verdict.fail   { background:rgba(240,112,112,.07); border:1px solid rgba(240,112,112,.3); color:var(--error); }
+.verdict.partial{ background:rgba(240,192,64,.07);  border:1px solid rgba(240,192,64,.3);  color:var(--warn); }
+
+/* ── DIVIDER / MISC ──────────────────────── */
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
+.sec-title {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
+.hint { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+/* ── LOGIC GATE (process page) ───────────── */
+.gate {
+  background: var(--surface2); border-radius: 6px;
+  padding: 14px 16px; border-left: 3px solid var(--border-l);
+}
+.gate.unlocked { border-left-color: var(--accent); }
+.gate-title {
+  font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 4px;
+}
+.gate-sub { font-size: 11px; color: var(--muted); line-height: 1.55; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <span class="logo">Excel Expert</span>
+    <span class="logo-sub">审计助手 · EY SG / HK</span>
+  </div>
+  <div class="header-r">
+    <span class="model-pill" id="modelPill">Claude</span>
+    <div class="live-dot" title="数据仅在本地处理，不上传至任何服务器"></div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <button class="nav-btn active" onclick="showPage('ask',this)">问答</button>
+  <button class="nav-btn" onclick="showPage('process',this)">处理文件</button>
+  <button class="nav-btn push" onclick="showPage('kb',this)">知识库 <span id="kbNav" style="color:var(--teal)"></span></button>
+  <button class="nav-btn" onclick="showPage('settings',this)">设置</button>
+</nav>
+
+
+<!-- ═══════════════════════════════════════
+     ASK PAGE
+═══════════════════════════════════════ -->
+<div class="page active" id="page-ask">
+
+  <!-- Scene selector -->
+  <div class="chips" id="sceneChips">
+    <button class="chip on"  onclick="setScene(this,'General')">General</button>
+    <button class="chip" onclick="setScene(this,'Formula')">Formula</button>
+    <button class="chip" onclick="setScene(this,'Data Cleaning')">Data Cleaning</button>
+    <button class="chip" onclick="setScene(this,'Bank Rec')">Bank Rec</button>
+    <button class="chip" onclick="setScene(this,'Lead Schedule')">Lead Schedule</button>
+    <button class="chip" onclick="setScene(this,'VBA')">VBA</button>
+    <button class="chip" onclick="setScene(this,'Audit')">Audit</button>
+  </div>
+
+  <!-- Question -->
+  <div class="input-wrap">
+    <div class="input-head">
+      <span class="tag">描述你的问题</span>
+      <span class="scene-pill" id="sceneBadge">General</span>
+    </div>
+    <textarea id="questionInput" rows="5"
+      placeholder="例如：我需要将 GL 分录与银行对账单匹配，金额完全一致，但日期可以相差 ±2 天，请显示未匹配的行。"></textarea>
+    <div class="input-foot">
+      <span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">Ctrl+Enter 发送</span>
+      <button class="btn btn-primary" id="askBtn" onclick="askQuestion()">提问 →</button>
+    </div>
+  </div>
+
+  <!-- Quick examples -->
+  <div>
+    <div class="sec-title">快速示例</div>
+    <div class="example-list">
+      <div class="example" onclick="fillExample(this)">将 GL 与银行对账单按金额匹配（±2 天容差）</div>
+      <div class="example" onclick="fillExample(this)">标记在期末截止日后录入的 Journal Entry</div>
+      <div class="example" onclick="fillExample(this)">从混合文本的 Description 列中提取金额</div>
+      <div class="example" onclick="fillExample(this)">构建可自动与 Sub-schedule 勾稽的 Lead Schedule</div>
+      <div class="example" onclick="fillExample(this)">将多实体 Trial Balance 合并到一张表</div>
+    </div>
+  </div>
+
+  <!-- 知识库已注入 badge -->
+  <span id="kbBadge" class="kb-badge">KB injected</span>
+
+  <!-- Response area -->
+  <div id="askResp"></div>
+
+  <!-- Data Context panel -->
+  <div class="block">
+    <div class="block-head">
+      <span class="tag">数据上下文 <span style="color:var(--muted);font-style:normal;letter-spacing:0;text-transform:none;font-size:10px">（可选）</span></span>
+      <span class="tag" style="color:var(--muted)">上传的数据将直接作为上下文发送给 AI</span>
+    </div>
+    <div class="block-body">
+      <div class="dual">
+        <div>
+          <div class="slot-label tag-teal">① 输入数据</div>
+          <div class="drop-zone">
+            <input type="file" accept=".csv,.txt" id="ctxFileIn" onchange="loadCtx(event,'in')">
+            <div class="drop-text" id="ctxTxtIn">拖拽 CSV 或点击选择<br><span style="font-size:9px;color:var(--adim)">将作为上下文发送给 AI</span></div>
+          </div>
+          <div id="ctxPrevIn"></div>
+          <div id="ctxClearIn" style="display:none;margin-top:7px">
+            <button class="btn btn-ghost btn-sm" onclick="clearCtx('in')" style="width:100%">清除</button>
+          </div>
+        </div>
+        <div>
+          <div class="slot-label tag-warn">② 预期结果</div>
+          <div class="drop-zone">
+            <input type="file" accept=".csv,.txt" id="ctxFileEx" onchange="loadCtx(event,'ex')">
+            <div class="drop-text" id="ctxTxtEx">拖拽 CSV 或点击选择<br><span style="font-size:9px;color:var(--adim)">告诉 AI 目标输出格式</span></div>
+          </div>
+          <div id="ctxPrevEx"></div>
+          <div id="ctxClearEx" style="display:none;margin-top:7px">
+            <button class="btn btn-ghost btn-sm" onclick="clearCtx('ex')" style="width:100%">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-ask -->
+
+
+<!-- ═══════════════════════════════════════
+     PROCESS FILE PAGE
+═══════════════════════════════════════ -->
+<div class="page" id="page-process">
+
+  <!-- Task type -->
+  <div class="block">
+    <div class="block-head"><span class="tag">任务类型</span></div>
+    <div class="block-body">
+      <div class="chips" id="taskChips">
+        <button class="chip on"  onclick="setTask(this,'clean')">🧹 数据清洗</button>
+        <button class="chip" onclick="setTask(this,'analyse')">📊 数据分析</button>
+        <button class="chip" onclick="setTask(this,'match')">🔗 跨表匹配</button>
+        <button class="chip" onclick="setTask(this,'report')">📝 生成报告</button>
+      </div>
+      <p class="hint" id="taskDesc" style="margin-top:10px">
+        删除重复行，填充空值，统一日期 / 数字格式，修正不一致的文本。
+      </p>
+    </div>
+  </div>
+
+  <!-- STEP 1: Logic Verification with sample -->
+  <div class="block">
+    <div class="block-head">
+      <span class="tag tag-warn">第一步 — 逻辑验证</span>
+      <span class="tag" style="color:var(--muted)">先用小样本验证逻辑，再处理完整文件</span>
+    </div>
+    <div class="block-body" style="display:flex;flex-direction:column;gap:12px">
+
+      <div class="dual" id="step1Upload">
+        <div>
+          <div class="slot-label tag-teal">样本数据（≤20 行）</div>
+          <div class="drop-zone">
+            <input type="file" accept=".csv,.txt" id="sampleA" onchange="loadProcFile(event,'sample')">
+            <div class="drop-text" id="sampleATxt">拖拽 CSV 或点击选择<br><span style="font-size:9px;color:var(--adim)">有代表性的小样本</span></div>
+          </div>
+          <div id="sampleAPrev"></div>
+          <div id="sampleAClear" style="display:none;margin-top:6px">
+            <button class="btn btn-ghost btn-sm" onclick="clearProcFile('sample')" style="width:100%">Clear</button>
+          </div>
+        </div>
+        <div>
+          <div class="slot-label tag-warn">预期结果</div>
+          <div class="drop-zone">
+            <input type="file" accept=".csv,.txt" id="sampleExp" onchange="loadProcFile(event,'exp')">
+            <div class="drop-text" id="sampleExpTxt">拖拽 CSV 或点击选择<br><span style="font-size:9px;color:var(--adim)">处理后应该是什么样子</span></div>
+          </div>
+          <div id="sampleExpPrev"></div>
+          <div id="sampleExpClear" style="display:none;margin-top:6px">
+            <button class="btn btn-ghost btn-sm" onclick="clearProcFile('exp')" style="width:100%">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match task needs two input files -->
+      <div id="fileBSlot" style="display:none">
+        <div class="slot-label tag-purple" style="margin-bottom:6px">第二个文件（用于跨表匹配）</div>
+        <div class="drop-zone">
+          <input type="file" accept=".csv,.txt" id="sampleB" onchange="loadProcFile(event,'b')">
+          <div class="drop-text" id="sampleBTxt">拖拽 File B 或点击选择</div>
+        </div>
+        <div id="sampleBPrev"></div>
+      </div>
+
+      <div>
+        <div class="slot-label" style="margin-bottom:6px">操作说明 <span style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:10px">（可选）</span></div>
+        <textarea class="field field-area" id="procInstructions" rows="3"
+          placeholder="例如：按 Amount（C 列）和 Date（±2 天）匹配，标记 Description 含 VOID 的行。"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-warn" id="verifyBtn" onclick="runVerify()">⚡ 运行逻辑验证</button>
+        <span class="hint" id="verifyStatus"></span>
+      </div>
+
+      <div id="verifyResp"></div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Full file processing (unlocks after verify passes) -->
+  <div class="gate" id="fullRunGate">
+    <div class="gate-title">第二步 — 完整文件处理</div>
+    <div class="gate-sub" id="gateMsg">请先完成第一步验证。逻辑确认无误后，在此上传完整数据文件。</div>
+    <div id="fullRunPanel" style="display:none;margin-top:14px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div class="slot-label tag-purple" style="margin-bottom:6px">完整数据文件</div>
+          <div class="drop-zone">
+            <input type="file" accept=".csv,.txt" id="fullFile" onchange="loadProcFile(event,'full')">
+            <div class="drop-text" id="fullFileTxt">拖拽完整 CSV 或点击选择</div>
+          </div>
+          <div id="fullFilePrev"></div>
+        </div>
+        <div id="fullFileBSlot" style="display:none">
+          <div class="slot-label tag-purple" style="margin-bottom:6px">完整 File B</div>
+          <div class="drop-zone">
+            <input type="file" accept=".csv,.txt" id="fullFileB" onchange="loadProcFile(event,'fullB')">
+            <div class="drop-text" id="fullFileBTxt">拖拽完整 File B 或点击选择</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="fullRunBtn" onclick="runFullProcess()">处理完整文件 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fullProcResp"></div>
+
+  <!-- Validation after full run -->
+  <div id="validateWrap" style="display:none">
+    <div class="block">
+      <div class="block-head">
+        <span class="tag tag-teal">验证完整输出</span>
+        <span class="tag" style="color:var(--muted)">与预期结果进行对比</span>
+      </div>
+      <div class="block-body">
+        <div class="dual">
+          <div>
+            <div class="slot-label tag-purple" style="margin-bottom:6px">AI 输出（自动填充）</div>
+            <div id="aiOutPreview" class="data-preview dp-purple" style="min-height:60px"></div>
+          </div>
+          <div>
+            <div class="slot-label tag-warn" style="margin-bottom:6px">你的预期结果</div>
+            <div class="drop-zone">
+              <input type="file" accept=".csv,.txt" id="fullExpFile" onchange="loadExpected(event)">
+              <div class="drop-text" id="fullExpTxt">拖拽 CSV 或点击选择</div>
+            </div>
+            <div id="fullExpPrev"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-teal"   id="validateBtn"    onclick="runValidation()"     disabled>◈ 验证输出</button>
+          <button class="btn btn-warn"   id="hallucinateBtn" onclick="checkHallucination()" disabled>⚠ 幻觉检测</button>
+        </div>
+      </div>
+    </div>
+    <div id="validateResp"></div>
+  </div>
+
+</div><!-- /page-process -->
+
+
+<!-- ═══════════════════════════════════════
+     KNOWLEDGE BASE PAGE
+═══════════════════════════════════════ -->
+<div class="page" id="page-kb">
+  <div class="block">
+    <div class="block-head">
+      <span class="tag">知识库 <span id="kbCount" style="color:var(--teal)"></span></span>
+      <span class="tag" style="color:var(--muted)">问答与文件处理共用 · 关键词自动匹配</span>
+    </div>
+    <div class="block-body">
+      <p class="hint" style="margin-bottom:14px">
+        添加客户特殊规则、事务所规范或历史经验。相关条目会自动注入每次 AI 调用。
+      </p>
+      <div id="kbList"></div>
+      <div class="divider"></div>
+      <div class="sec-title">新增条目</div>
+      <input  class="field" id="kbTag"  type="text" placeholder="标签（例如 Client: DBS · Rule: FX Treatment）">
+      <textarea class="field field-area" id="kbText"
+        placeholder="例如：ABC Corp 的 GL 导出文件底部总有一行 TOTAL，处理前须删除。实体代码格式：SG-XXXX 或 HK-XXXX。"></textarea>
+      <button class="btn btn-ghost" onclick="addKb()">+ 添加</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     SETTINGS PAGE
+═══════════════════════════════════════ -->
+<div class="page" id="page-settings">
+  <div class="block">
+    <div class="block-head"><span class="tag">API 配置</span></div>
+    <div class="block-body" style="display:flex;flex-direction:column;gap:12px">
+
+      <div>
+        <div class="sec-title">服务商</div>
+        <select class="field mono-field" id="apiProvider" onchange="updateProvider()">
+          <option value="anthropic" selected>Anthropic / Claude（浏览器直接可用）</option>
+          <option value="deepseek">DeepSeek（需要本地代理服务器）</option>
+          <option value="yuanbao">腾讯元宝 / 混元（需要本地代理服务器）</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="sec-title">API 密钥</div>
+        <div style="display:flex;gap:8px">
+          <input type="password" class="field mono-field" id="apiKey" placeholder="在此粘贴你的 API 密钥..." style="margin:0">
+          <button class="btn btn-primary" onclick="saveKey()">保存</button>
+        </div>
+      </div>
+
+      <p class="hint">
+        API 密钥仅保存在 <strong>浏览器本地存储</strong>中，只会发送给所选 API 服务商，不会流向任何第三方。
+        你的原始表格数据始终留在本地设备上。<br><br>
+        <span style="color:var(--warn)">⚠ DeepSeek / 元宝：</span>这两个平台的 API 不支持浏览器直接调用（无 CORS），需要配合本地 Node.js 代理使用。直接打开 HTML 文件请使用 Anthropic。
+      </p>
+
+      <div class="divider"></div>
+      <div class="sec-title">获取 API 密钥</div>
+      <p class="hint">
+        Anthropic: <span style="color:var(--teal);font-family:'DM Mono',monospace">console.anthropic.com</span><br>
+        DeepSeek:  <span style="color:var(--teal);font-family:'DM Mono',monospace">platform.deepseek.com</span><br>
+        腾讯元宝:  <span style="color:var(--teal);font-family:'DM Mono',monospace">console.cloud.tencent.com/hunyuan</span>
+      </p>
+
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-head"><span class="tag">最近记录</span></div>
+    <div class="block-body"><div id="historyList"><p class="hint">暂无记录。</p></div></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     SCRIPT
+═══════════════════════════════════════ -->
+<script>
+// ── STATE ────────────────────────────────────────────────────
+var currentScene   = 'General';
+var currentTask    = 'clean';
+var provider       = localStorage.getItem('xpert_provider') || 'anthropic';
+var queryHistory   = JSON.parse(localStorage.getItem('xpert_history') || '[]');
+var kb             = JSON.parse(localStorage.getItem('xpert_kb')      || '[]');
+var ctxIn          = null;   // Ask: input data context
+var ctxEx          = null;   // Ask: expected result context
+var procSample     = null;   // Process: sample input A
+var procSampleB    = null;   // Process: sample input B (match task)
+var procExpected   = null;   // Process: expected result for verify
+var procFull       = null;   // Process: full file A
+var procFullB      = null;   // Process: full file B
+var lastAskQ       = '';
+var lastAskA       = '';
+var lastProcInstr  = '';     // instructions used in verified run
+var lastProcOut    = '';
+var expectedData   = null;
+var verifyPassed   = false;
+
+var TASK_DESCS = {
+  clean:   '删除重复行，填充空值，统一日期 / 数字格式，修正不一致的文本。',
+  analyse: '汇总聚合，计算统计数据，标记异常值和离群点。',
+  match:   '按一个或多个条件跨表匹配行，标记两侧未匹配的行。',
+  report:  '读取数据，自动生成结构化的分析报告，包含发现与结论。'
+};
+var TASK_LABELS = { clean:'Clean', analyse:'Analyse', match:'Match', report:'Report' };
+
+// ── INIT ─────────────────────────────────────────────────────
+(function init() {
+  var k = localStorage.getItem('xpert_key');
+  if (k) document.getElementById('apiKey').value = k;
+  document.getElementById('apiProvider').value = provider;
+  updateProvider();
+  renderKb();
+  renderHistory();
+  renderUploadUI();
+})();
+
+// ── NAV ──────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────
+function saveKey() {
+  var key = document.getElementById('apiKey').value.trim();
+  if (!key) return;
+  localStorage.setItem('xpert_key', key);
+  var btn = event.target; btn.textContent = '已保存 ✓';
+  setTimeout(function(){ btn.textContent = '保存'; }, 1500);
+}
+
+function updateProvider() {
+  provider = document.getElementById('apiProvider').value;
+  localStorage.setItem('xpert_provider', provider);
+  document.getElementById('modelPill').textContent = provider === 'deepseek' ? 'DeepSeek' : provider === 'yuanbao' ? '元宝' : 'Claude';
+}
+
+// ── SCENE ─────────────────────────────────────────────────────
+function setScene(el, scene) {
+  document.querySelectorAll('#sceneChips .chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  currentScene = scene;
+  document.getElementById('sceneBadge').textContent = scene;
+}
+
+// ── TASK ──────────────────────────────────────────────────────
+function setTask(el, task) {
+  document.querySelectorAll('#taskChips .chip').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  currentTask = task;
+  document.getElementById('taskDesc').textContent = TASK_DESCS[task];
+  document.getElementById('taskBadge') && (document.getElementById('taskBadge').textContent = TASK_LABELS[task]);
+  // Show/hide second file slot for match
+  document.getElementById('fileBSlot').style.display    = task === 'match' ? 'block' : 'none';
+  document.getElementById('fullFileBSlot').style.display = task === 'match' ? 'block' : 'none';
+  // Reset verify state on task change
+  verifyPassed = false;
+  resetGate();
+  renderUploadUI();
+}
+
+// ── EXAMPLES ──────────────────────────────────────────────────
+function fillExample(el) {
+  document.getElementById('questionInput').value = el.textContent.trim();
+  document.getElementById('questionInput').focus();
+}
+
+document.getElementById('questionInput').addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 'Enter') askQuestion();
+});
+
+// ── FILE LOADERS ──────────────────────────────────────────────
+function loadCtx(event, slot) {
+  readFile(event.target.files[0], function(text) {
+    var lines = text.trim().split('\n').slice(0, 11);
+    var data = { raw: lines.join('\n') };
+    if (slot === 'in') {
+      ctxIn = data;
+      document.getElementById('ctxPrevIn').innerHTML = '<div class="data-preview">' + esc(lines.join('\n')) + '</div>';
+      document.getElementById('ctxClearIn').style.display = 'block';
+      document.getElementById('ctxTxtIn').innerHTML = '<span style="color:var(--teal);font-size:10px">✓ ' + (lines.length-1) + ' rows loaded</span>';
+    } else {
+      ctxEx = data;
+      document.getElementById('ctxPrevEx').innerHTML = '<div class="data-preview dp-warn">' + esc(lines.join('\n')) + '</div>';
+      document.getElementById('ctxClearEx').style.display = 'block';
+      document.getElementById('ctxTxtEx').innerHTML = '<span style="color:var(--warn);font-size:10px">✓ ' + (lines.length-1) + ' rows loaded</span>';
+    }
+  });
+}
+
+function clearCtx(slot) {
+  if (slot === 'in') {
+    ctxIn = null;
+    document.getElementById('ctxPrevIn').innerHTML = '';
+    document.getElementById('ctxClearIn').style.display = 'none';
+    document.getElementById('ctxFileIn').value = '';
+    document.getElementById('ctxTxtIn').innerHTML = '拖拽 CSV 或点击选择<br><span style="font-size:9px;color:var(--adim)">将作为上下文发送给 AI</span>';
+  } else {
+    ctxEx = null;
+    document.getElementById('ctxPrevEx').innerHTML = '';
+    document.getElementById('ctxClearEx').style.display = 'none';
+    document.getElementById('ctxFileEx').value = '';
+    document.getElementById('ctxTxtEx').innerHTML = '拖拽 CSV 或点击选择<br><span style="font-size:9px;color:var(--adim)">告诉 AI 目标输出格式</span>';
+  }
+}
+
+function loadProcFile(event, slot) {
+  readFile(event.target.files[0], function(text) {
+    var lines = text.trim().split('\n').slice(0, 51);
+    var data = { raw: lines.join('\n') };
+    var configs = {
+      sample: { ref: function(d){ procSample   = d; }, prevId:'sampleAPrev',  clearId:'sampleAClear',  txtId:'sampleATxt',  color:'var(--teal)' },
+      exp:    { ref: function(d){ procExpected  = d; }, prevId:'sampleExpPrev',clearId:'sampleExpClear',txtId:'sampleExpTxt',color:'var(--warn)',  dpClass:'dp-warn' },
+      b:      { ref: function(d){ procSampleB   = d; }, prevId:'sampleBPrev',  clearId:null,            txtId:'sampleBTxt',  color:'var(--purple)'},
+      full:   { ref: function(d){ procFull      = d; }, prevId:'fullFilePrev', clearId:null,            txtId:'fullFileTxt', color:'var(--purple)', dpClass:'dp-purple' },
+      fullB:  { ref: function(d){ procFullB     = d; }, prevId:null,           clearId:null,            txtId:'fullFileBTxt',color:'var(--purple)' }
+    };
+    var cfg = configs[slot]; if (!cfg) return;
+    cfg.ref(data);
+    if (cfg.prevId) {
+      var cls = cfg.dpClass ? ' ' + cfg.dpClass : '';
+      document.getElementById(cfg.prevId).innerHTML = '<div class="data-preview' + cls + '">' + esc(lines.slice(0,6).join('\n')) + (lines.length>6?'\n...':'') + '</div>';
+    }
+    if (cfg.clearId) document.getElementById(cfg.clearId).style.display = 'block';
+    if (cfg.txtId)   document.getElementById(cfg.txtId).innerHTML = '<span style="color:' + cfg.color + ';font-size:10px">✓ ' + (lines.length-1) + ' rows loaded</span>';
+  });
+}
+
+function clearProcFile(slot) {
+  var ids = { sample:['sampleAPrev','sampleAClear','sampleATxt','sampleA'],
+              exp:   ['sampleExpPrev','sampleExpClear','sampleExpTxt','sampleExp'] };
+  var texts = { sample:'有代表性的小样本', exp:'处理后应该是什么样子' };
+  var cfg = ids[slot]; if (!cfg) return;
+  if (slot === 'sample') procSample   = null;
+  if (slot === 'exp')    procExpected = null;
+  document.getElementById(cfg[0]).innerHTML = '';
+  document.getElementById(cfg[1]).style.display = 'none';
+  document.getElementById(cfg[2]).innerHTML = '拖拽 CSV 或点击选择<br><span style="font-size:9px;color:var(--adim)">' + texts[slot] + '</span>';
+  document.getElementById(cfg[3]).value = '';
+}
+
+function renderUploadUI() {
+  // nothing dynamic needed now — handled in setTask
+}
+
+function readFile(file, cb) {
+  if (!file) return;
+  var r = new FileReader();
+  r.onload = function(e){ cb(e.target.result); };
+  r.readAsText(file);
+}
+
+// ── KB ────────────────────────────────────────────────────────
+function addKb() {
+  var tag  = document.getElementById('kbTag').value.trim();
+  var text = document.getElementById('kbText').value.trim();
+  if (!text) return;
+  kb.unshift({ id: Date.now(), tag: tag || 'General', text: text });
+  localStorage.setItem('xpert_kb', JSON.stringify(kb));
+  document.getElementById('kbTag').value  = '';
+  document.getElementById('kbText').value = '';
+  renderKb();
+}
+
+function deleteKb(id) {
+  kb = kb.filter(function(e){ return e.id !== id; });
+  localStorage.setItem('xpert_kb', JSON.stringify(kb));
+  renderKb();
+}
+
+function renderKb() {
+  var el  = document.getElementById('kbList');
+  var cnt = kb.length ? '(' + kb.length + ')' : '';
+  document.getElementById('kbCount').textContent = cnt;
+  document.getElementById('kbNav').textContent   = cnt;
+  if (!kb.length) { el.innerHTML = '<p class="hint">暂无条目。</p>'; return; }
+  el.innerHTML = kb.map(function(e){
+    return '<div class="kb-item"><div class="kb-item-tag">' + esc(e.tag) + '</div>' +
+           '<div class="kb-item-text">' + esc(e.text) + '</div>' +
+           '<button class="kb-del" onclick="deleteKb(' + e.id + ')">×</button></div>';
+  }).join('');
+}
+
+function getKbSnippet(text) {
+  if (!kb.length) return { snippet:'', used:false };
+  var words = text.toLowerCase().split(/\W+/).filter(function(w){ return w.length > 3; });
+  var scored = kb.map(function(e){
+    var body  = (e.tag + ' ' + e.text).toLowerCase();
+    var score = words.filter(function(w){ return body.indexOf(w) >= 0; }).length;
+    return { e:e, s:score };
+  }).sort(function(a,b){ return b.s - a.s; });
+  var top = scored.filter(function(x){ return x.s > 0; }).slice(0,4).map(function(x){ return x.e; });
+  var use = top.length ? top : kb.slice(0,2);
+  return {
+    snippet: '\n\n## Firm / Client Knowledge Base\n' + use.map(function(e){ return '[' + e.tag + ']: ' + e.text; }).join('\n'),
+    used: true
+  };
+}
+
+// ── SYSTEM PROMPT (EY-grade) ─────────────────────────────────
+function buildSystem(scene, question, hasData) {
+  var kbObj = getKbSnippet(question);
+  window._kbUsed = kbObj.used;
+
+  return [
+    'You are a highly experienced Senior Audit Manager from EY, with 12+ years in Big 4 external audit across Singapore and Hong Kong.',
+    'You are rigorous, precise, and methodical. Your advice must be 100% grounded in the actual data structure and business context provided.',
+    '',
+    '## Core Output Rules',
+    '',
+    '1. FORMULA-FIRST: Always default to giving cell-by-cell Excel formulas the user can paste directly.',
+    '   - Show each formula in a code block starting with =',
+    '   - State exactly which cell to enter it in (e.g. "Enter in C2, then drag down to C100")',
+    '   - Explain each function argument in plain English on a single line below the formula',
+    '',
+    '2. STEP-BY-STEP: For multi-step solutions, give a numbered walkthrough — one action per step.',
+    '   Each step must reference an exact cell or range.',
+    '',
+    '3. VBA SECOND: Only offer VBA if a formula approach is genuinely impractical.',
+    '   VBA must be: fully self-contained, runnable via Alt+F11 → Insert Module → paste → F5,',
+    '   with explicit INPUT_RANGE and OUTPUT_RANGE comments at the top.',
+    '',
+    '4. NO PYTHON unless the user explicitly requests it. Python does not run natively in Excel.',
+    '',
+    '5. VERSION FALLBACK: If using Excel 365 functions (XLOOKUP, FILTER, LET, LAMBDA),',
+    '   also provide an alternative for Excel 2016/2019.',
+    '',
+    '6. DATA-GROUNDED: If data samples are provided, read the actual column names, data types,',
+    '   and value patterns before answering. Your formula must reference the REAL column names.',
+    '   Do not use generic A1/B1 references if the actual headers are known.',
+    '',
+    '7. EDGE CASES: Always end with a section "### ⚠ Edge Cases & Validation"',
+    '   listing ≥3 specific failure modes (blank cells, duplicate keys, text-stored numbers,',
+    '   date format mismatch DD/MM vs MM/DD, merged cells) with concrete fixes.',
+    '',
+    '8. AUDIT MINDSET: Flag anything that could be a control weakness, audit risk, or data integrity issue.',
+    '   Reference IFRS/SFRS standards where relevant.',
+    kbObj.snippet,
+    '',
+    'Current scene: ' + scene
+  ].join('\n');
+}
+
+// ── ASK ───────────────────────────────────────────────────────
+async function askQuestion() {
+  var q = document.getElementById('questionInput').value.trim();
+  if (!q) return;
+  document.getElementById('askBtn').disabled = true;
+  document.getElementById('askResp').innerHTML = loadingHtml('正在分析...');
+
+  // Build user message — inject data context as markdown tables
+  var userMsg = q;
+  if (ctxIn || ctxEx) {
+    userMsg += '\n\n---\n**Based on the following data structure and expected result, provide the most specific and compatible Excel solution.**\n';
+    if (ctxIn) {
+      userMsg += '\n### Input Data Sample\n' + csvToMarkdownTable(ctxIn.raw) + '\n';
+    }
+    if (ctxEx) {
+      userMsg += '\n### Expected Output\n' + csvToMarkdownTable(ctxEx.raw) + '\n';
+      userMsg += '\n> Note: The expected output above shows the target result. Your formula/solution must produce output that matches this structure and logic exactly.\n';
+    }
+  }
+
+  try {
+    var ans = await callAI(buildSystem(currentScene, q, !!(ctxIn||ctxEx)), userMsg);
+    lastAskQ = q; lastAskA = ans;
+    document.getElementById('askResp').innerHTML = respHtml(ans, 'Solution', 'tag-green', '');
+    appendAskActions();
+    saveHistory(q, ans, currentScene);
+    if (window._kbUsed) {
+      var b = document.getElementById('kbBadge');
+      b.classList.add('show');
+      setTimeout(function(){ b.classList.remove('show'); }, 3000);
+    }
+  } catch(e) {
+    document.getElementById('askResp').innerHTML = errHtml(e.message);
+  } finally {
+    document.getElementById('askBtn').disabled = false;
+  }
+}
+
+async function verifyLogic() {
+  if (!lastAskA) return;
+  var btn = document.getElementById('btnVL'); if (btn) btn.disabled = true;
+  var div = document.createElement('div');
+  div.innerHTML = loadingHtml('正在验证逻辑...');
+  document.getElementById('askResp').appendChild(div);
+  var prompt = 'Original question: "' + lastAskQ + '"\n\nProposed solution:\n---\n' + lastAskA + '\n---\n\n' +
+    'Audit each formula/step: identify the exact condition under which it returns wrong results or an error, ' +
+    'rate risk (HIGH/MEDIUM/LOW), and give a concrete fix. ' +
+    'Check specifically: blank cells, duplicate keys, text-stored numbers, merged cells, ' +
+    'DD/MM vs MM/DD date formats, >50k row performance, and any IFRS/SFRS-specific issues.';
+  try {
+    var r = await callAI('You are a rigorous Excel formula auditor and EY audit manager.', prompt);
+    div.outerHTML = respHtml(r, '⚠ Logic Validation', 'tag-warn', 'r-warn');
+  } catch(e) { div.outerHTML = errHtml(e.message); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+function appendAskActions() {
+  var old = document.getElementById('askActBar'); if (old) old.remove();
+  var hint = (ctxIn) ? '数据上下文已注入 ↑' : '在下方面板上传数据，获得更贴合实际的解答';
+  var html = '<div id="askActBar" style="border-radius:0 0 6px 6px;overflow:hidden">' +
+    '<div class="action-bar">' +
+    '<button class="btn btn-warn" id="btnVL" onclick="verifyLogic()">⚠ Validate Logic</button>' +
+    '<span class="action-hint">' + hint + '</span>' +
+    '</div></div>';
+  var first = document.querySelector('#askResp .resp');
+  if (first) first.insertAdjacentHTML('afterend', html);
+}
+
+// ── PROCESS: LOGIC VERIFICATION ──────────────────────────────
+function buildProcSystem() {
+  var kbObj = getKbSnippet(document.getElementById('procInstructions').value || currentTask);
+  return [
+    'You are a Senior Audit Manager from EY. You process CSV data with extreme precision.',
+    'You NEVER invent data — you only transform what is explicitly provided.',
+    'You always show your reasoning step by step.',
+    'Output format MUST follow the template exactly so it can be parsed programmatically.',
+    kbObj.snippet
+  ].join('\n');
+}
+
+function buildProcPrompt(dataA, dataB, isVerify) {
+  var instr = document.getElementById('procInstructions').value.trim();
+  var instrLine = instr ? '\nUser instructions: ' + instr : '';
+  var scope = isVerify ? 'SAMPLE VERIFICATION RUN' : 'FULL PROCESSING RUN';
+
+  var templates = {
+    clean:
+      '## Task: Data Cleaning — ' + scope + '\n' +
+      '1. Remove exact duplicate rows\n2. Fill blank/null values or flag them\n' +
+      '3. Standardise dates to YYYY-MM-DD\n4. Standardise numbers (remove currency symbols, commas)\n' +
+      '5. Fix inconsistent text (trim whitespace, normalise casing)\n' + instrLine + '\n\n' +
+      'Return EXACTLY:\nSTEPS:\n[numbered list of every operation, referencing actual column names]\n\n' +
+      'CLEANED_DATA:\n[full output CSV including header]\n\n' +
+      'SUMMARY:\n[rows removed, cells changed, issues found]',
+
+    analyse:
+      '## Task: Data Analysis — ' + scope + '\n' +
+      '1. Summary statistics for numeric columns\n2. Identify outliers (>2 std deviations)\n' +
+      '3. Flag suspicious patterns relevant to audit\n4. Group/aggregate by categorical columns\n' + instrLine + '\n\n' +
+      'Return EXACTLY:\nSTEPS:\n[numbered list]\n\nANALYSIS_OUTPUT:\n[results as CSV]\n\nFINDINGS:\n[key findings and anomalies]',
+
+    match:
+      '## Task: Cross-table Match — ' + scope + '\n' +
+      '1. Identify best matching columns between files\n2. Match rows (MATCHED / UNMATCHED_A / UNMATCHED_B / PARTIAL_MATCH)\n' + instrLine + '\n\n' +
+      'Return EXACTLY:\nSTEPS:\n[columns used, matching logic]\n\n' +
+      'MATCH_OUTPUT:\n[CSV with all rows plus STATUS column: MATCHED/UNMATCHED_A/UNMATCHED_B/PARTIAL_MATCH]\n\n' +
+      'SUMMARY:\n[X matched, Y unmatched in A, Z unmatched in B]',
+
+    report:
+      '## Task: Analytical Report — ' + scope + '\n' +
+      '1. Executive Summary\n2. Data Overview\n3. Key Findings (with specific numbers)\n' +
+      '4. Anomalies & Risk Areas\n5. Recommendations\n' + instrLine + '\n\n' +
+      'Return EXACTLY:\nSTEPS:\n[what was analysed]\n\nREPORT:\n[full structured report]'
+  };
+
+  var dataSection = (currentTask === 'match' && dataB)
+    ? '\n\nFile A:\n```\n' + dataA.raw + '\n```\n\nFile B:\n```\n' + dataB.raw + '\n```'
+    : '\n\nData:\n```\n' + (dataA ? dataA.raw : '') + '\n```';
+
+  return (templates[currentTask] || templates.clean) + dataSection;
+}
+
+async function runVerify() {
+  if (!procSample) { alert('Upload a sample data file first (Step 1).'); return; }
+  var btn = document.getElementById('verifyBtn');
+  btn.disabled = true;
+  document.getElementById('verifyStatus').textContent = '';
+  document.getElementById('verifyResp').innerHTML = loadingHtml('正在处理样本数据...');
+
+  try {
+    // Step A: process the sample
+    var rawOut = await callAI(buildProcSystem(), buildProcPrompt(procSample, procSampleB, true));
+
+    // Step B: if expected result provided, auto-compare
+    if (procExpected) {
+      var aiOutput = extractSection(rawOut, ['CLEANED_DATA','ANALYSIS_OUTPUT','MATCH_OUTPUT','REPORT']);
+      var comparePrompt =
+        'Compare the AI-processed output against the expected result row by row.\n\n' +
+        'AI Output:\n```\n' + (aiOutput || rawOut).split('\n').slice(0,21).join('\n') + '\n```\n\n' +
+        'Expected Result:\n```\n' + procExpected.raw + '\n```\n\n' +
+        '1. Match rows by position or key column\n' +
+        '2. For each row: ✅ MATCH | ❌ MISMATCH (show exact AI value vs expected) | ⚠ PARTIAL\n' +
+        '3. Produce a compact comparison table\n' +
+        '4. Final verdict on one line: VERDICT: PASS | FAIL | PARTIAL\n' +
+        '5. If FAIL or PARTIAL: root cause analysis in 2-3 sentences';
+
+      var compareOut = await callAI('You are a rigorous data validator. Be precise.', comparePrompt);
+
+      // Parse verdict
+      var vMatch = compareOut.match(/VERDICT:\s*(PASS|FAIL|PARTIAL)/i);
+      var verdict = vMatch ? vMatch[1].toUpperCase() : null;
+      verifyPassed = verdict === 'PASS';
+
+      var processHtml = respHtml(rawOut, 'Sample Processing Result', 'tag-purple', 'r-purple');
+      var compareHtml = respHtml(compareOut, '◈ Logic Match Report', 'tag-teal', 'r-teal');
+
+      var verdictHtml = '';
+      if (verdict) {
+        var cls  = verdict==='PASS' ? 'pass' : verdict==='FAIL' ? 'fail' : 'partial';
+        var icon = verdict==='PASS' ? '✅' : verdict==='FAIL' ? '❌' : '⚠';
+        verdictHtml = '<div class="verdict ' + cls + '">' + icon + ' Logic Verification: <strong>' + verdict + '</strong>' +
+          (verifyPassed ? ' — Logic confirmed. You may now proceed to Step 2.' : ' — Fix the issues above before processing full data.') +
+          '</div>';
+      }
+
+      document.getElementById('verifyResp').innerHTML = processHtml + compareHtml + verdictHtml;
+
+      // Update gate
+      if (verifyPassed) {
+        document.getElementById('fullRunGate').classList.add('unlocked');
+        document.getElementById('gateMsg').textContent = '✅ 逻辑已验证通过，请在下方上传完整数据文件进行处理。';
+        document.getElementById('fullRunPanel').style.display = 'block';
+        document.getElementById('verifyStatus').textContent = '✅ 验证通过';
+        document.getElementById('verifyStatus').style.color = 'var(--accent)';
+      } else {
+        resetGate();
+        document.getElementById('verifyStatus').textContent = verdict ? ('❌ ' + verdict) : '';
+        document.getElementById('verifyStatus').style.color = 'var(--error)';
+      }
+    } else {
+      // No expected result — just show sample output, let user decide
+      document.getElementById('verifyResp').innerHTML = respHtml(rawOut, 'Sample Processing Result', 'tag-purple', 'r-purple') +
+        '<div class="verdict partial">⚠ 未上传预期结果——请手动检查上方输出，确认无误后解锁第二步。 <button class="btn btn-ghost btn-sm" onclick="manualUnlock()" style="margin-left:10px">手动解锁第二步</button></div>';
+    }
+
+    lastProcInstr = document.getElementById('procInstructions').value.trim();
+
+  } catch(e) {
+    document.getElementById('verifyResp').innerHTML = errHtml(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function manualUnlock() {
+  verifyPassed = true;
+  document.getElementById('fullRunGate').classList.add('unlocked');
+  document.getElementById('gateMsg').textContent = '✅ Manually unlocked. Upload your full data file below.';
+  document.getElementById('fullRunPanel').style.display = 'block';
+}
+
+function resetGate() {
+  verifyPassed = false;
+  document.getElementById('fullRunGate').classList.remove('unlocked');
+  document.getElementById('gateMsg').textContent = '请先完成第一步验证。逻辑确认无误后，在此上传完整数据文件。';
+  document.getElementById('fullRunPanel').style.display = 'none';
+}
+
+// ── PROCESS: FULL RUN ─────────────────────────────────────────
+async function runFullProcess() {
+  if (!procFull) { alert('Upload a full data file first.'); return; }
+  if (currentTask === 'match' && !procFullB) { alert('Cross-table match needs a second full file.'); return; }
+  var btn = document.getElementById('fullRunBtn');
+  btn.disabled = true;
+  document.getElementById('fullProcResp').innerHTML = loadingHtml('正在处理完整数据集...');
+  document.getElementById('validateWrap').style.display = 'none';
+
+  try {
+    var rawOut = await callAI(buildProcSystem(), buildProcPrompt(procFull, procFullB, false));
+    lastProcOut = rawOut;
+
+    var steps   = extractSection(rawOut, ['STEPS']);
+    var output  = extractSection(rawOut, ['CLEANED_DATA','ANALYSIS_OUTPUT','MATCH_OUTPUT','REPORT']);
+    var summary = extractSection(rawOut, ['SUMMARY','FINDINGS']);
+
+    var stepsHtml = '';
+    if (steps) {
+      var stepLines = steps.split('\n').filter(function(l){ return l.trim(); });
+      stepsHtml = '<div class="step-trace">' + stepLines.map(function(l, i){
+        return '<div class="step-row"><div class="step-num-badge">' + (i+1) + '</div><span>' + esc(l.replace(/^\d+\.\s*/,'')) + '</span></div>';
+      }).join('') + '</div>';
+    }
+
+    var outputHtml = output ? (
+      '<div style="padding:12px 16px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+          '<span class="tag tag-purple">Processed Output</span>' +
+          '<button class="btn btn-ghost btn-sm" onclick="downloadOutput()">⬇ Download CSV</button>' +
+        '</div>' +
+        '<div class="data-preview dp-purple" style="max-height:180px">' +
+          esc(output.split('\n').slice(0,20).join('\n')) + (output.split('\n').length>20?'\n...':'') +
+        '</div>' +
+      '</div>'
+    ) : '';
+
+    var summaryHtml = summary ? '<div class="resp-body" style="border-top:1px solid var(--border)">' + fmtResp(summary) + '</div>' : '';
+
+    var now = new Date().toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('fullProcResp').innerHTML =
+      '<div class="resp r-purple">' +
+        '<div class="resp-head"><span class="tag tag-purple">Full Processing Complete</span>' +
+        '<span class="tag">' + TASK_LABELS[currentTask] + ' · ' + now + '</span></div>' +
+        stepsHtml + outputHtml + summaryHtml +
+      '</div>';
+
+    // Unlock validation
+    document.getElementById('validateWrap').style.display = 'block';
+    document.getElementById('aiOutPreview').textContent = (output || rawOut).split('\n').slice(0,15).join('\n');
+    document.getElementById('validateBtn').disabled    = false;
+    document.getElementById('hallucinateBtn').disabled = false;
+
+  } catch(e) {
+    document.getElementById('fullProcResp').innerHTML = errHtml(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── PROCESS: VALIDATION ───────────────────────────────────────
+function loadExpected(event) {
+  readFile(event.target.files[0], function(text) {
+    var lines = text.trim().split('\n').slice(0,21);
+    expectedData = { raw: lines.join('\n') };
+    document.getElementById('fullExpPrev').innerHTML = '<div class="data-preview dp-warn">' + esc(lines.join('\n')) + '</div>';
+    document.getElementById('fullExpTxt').innerHTML  = '<span style="color:var(--warn);font-size:10px">✓ ' + (lines.length-1) + ' rows</span>';
+  });
+}
+
+async function runValidation() {
+  if (!expectedData) { alert('Upload your expected result first.'); return; }
+  document.getElementById('validateBtn').disabled = true;
+  document.getElementById('validateResp').innerHTML = loadingHtml('正在对比输出与预期结果...');
+  var aiOut = extractSection(lastProcOut, ['CLEANED_DATA','ANALYSIS_OUTPUT','MATCH_OUTPUT','REPORT']) || lastProcOut.slice(0,2000);
+  var prompt =
+    'Compare AI output vs expected result row by row.\n\nAI Output:\n```\n' + aiOut.split('\n').slice(0,21).join('\n') +
+    '\n```\n\nExpected Result:\n```\n' + expectedData.raw +
+    '\n```\n\n1. Match rows by position or key column\n' +
+    '2. For each row: ✅ MATCH | ❌ MISMATCH (show exact values) | ⚠ PARTIAL\n' +
+    '3. Comparison table\n4. VERDICT: PASS / FAIL / PARTIAL\n5. Root cause of mismatches';
+  try {
+    var r = await callAI('You are a rigorous data validator.', prompt);
+    document.getElementById('validateResp').innerHTML = respHtml(r, '◈ Validation Result', 'tag-teal', 'r-teal');
+    var v = (r.match(/VERDICT:\s*(PASS|FAIL|PARTIAL)/i)||r.match(/\b(PASS|FAIL|PARTIAL)\b/i)||[])[1];
+    if (v) {
+      v = v.toUpperCase();
+      document.getElementById('validateResp').insertAdjacentHTML('beforeend',
+        '<div class="verdict ' + (v==='PASS'?'pass':v==='FAIL'?'fail':'partial') + '">' +
+        (v==='PASS'?'✅':v==='FAIL'?'❌':'⚠') + ' Overall Verdict: <strong>' + v + '</strong></div>');
+    }
+  } catch(e) { document.getElementById('validateResp').innerHTML = errHtml(e.message); }
+  finally { document.getElementById('validateBtn').disabled = false; }
+}
+
+async function checkHallucination() {
+  document.getElementById('hallucinateBtn').disabled = true;
+  document.getElementById('validateResp').innerHTML = loadingHtml('正在检测幻觉...');
+  var aiOut = extractSection(lastProcOut, ['CLEANED_DATA','ANALYSIS_OUTPUT','MATCH_OUTPUT','REPORT','STEPS']) || lastProcOut.slice(0,2000);
+  var input = procFull ? procFull.raw : (procSample ? procSample.raw : '');
+  var prompt =
+    'Hallucination detection.\n\nOriginal Input:\n```\n' + input.split('\n').slice(0,21).join('\n') +
+    '\n```\n\nAI Output:\n```\n' + aiOut.split('\n').slice(0,40).join('\n') +
+    '\n```\n\n1. Check every number, date, name, value — traceable to input?\n' +
+    '2. Flag any value not found in input\n3. Flag incorrect calculations\n' +
+    '4. Flag unsupported conclusions\n5. Rate hallucination risk: LOW / MEDIUM / HIGH\n' +
+    '6. Specific examples of hallucinated vs real values';
+  try {
+    var r = await callAI('You are a hallucination detection expert. Be extremely precise.', prompt);
+    document.getElementById('validateResp').innerHTML = respHtml(r, '⚠ Hallucination Check', 'tag-warn', 'r-warn');
+  } catch(e) { document.getElementById('validateResp').innerHTML = errHtml(e.message); }
+  finally { document.getElementById('hallucinateBtn').disabled = false; }
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function callAI(system, userMsg) {
+  var key = localStorage.getItem('xpert_key');
+  if (!key) throw new Error('未设置 API 密钥，请前往设置页面。');
+
+  if (provider === 'deepseek') {
+    var r = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({ model: 'deepseek-chat', max_tokens: 4000,
+        messages: [{ role:'system', content:system }, { role:'user', content:userMsg }] })
+    });
+    var d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.choices[0].message.content;
+  } else if (provider === 'yuanbao') {
+    // 腾讯混元 OpenAI 兼容接口
+    var r = await fetch('https://api.hunyuan.cloud.tencent.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({ model: 'hunyuan-turbo', max_tokens: 4000,
+        messages: [{ role:'system', content:system }, { role:'user', content:userMsg }] })
+    });
+    if (!r.ok) {
+      var errText = await r.text();
+      throw new Error('元宝 API 错误 ' + r.status + ': ' + errText);
+    }
+    var d = await r.json();
+    if (d.error) throw new Error(JSON.stringify(d.error));
+    return d.choices[0].message.content;
+  } else {
+    var r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 4000,
+        system: system,
+        messages: [{ role:'user', content: userMsg }]
+      })
+    });
+    var d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.content[0].text;
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function extractSection(text, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    var re = new RegExp(keys[i] + ':\\s*\\n([\\s\\S]*?)(?=\\n[A-Z_]+:|$)', 'i');
+    var m  = text.match(re);
+    if (m) return m[1].trim();
+  }
+  return '';
+}
+
+function downloadOutput() {
+  var out  = extractSection(lastProcOut, ['CLEANED_DATA','ANALYSIS_OUTPUT','MATCH_OUTPUT','REPORT']) || lastProcOut;
+  var blob = new Blob([out], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'excel-expert-output-' + Date.now() + '.csv';
+  a.click();
+}
+
+// Convert CSV string → markdown table (for prompt injection)
+function csvToMarkdownTable(csvText) {
+  var lines = csvText.trim().split('\n').slice(0, 12); // header + 11 rows
+  if (lines.length < 1) return csvText;
+  var rows = lines.map(function(l){ return l.split(',').map(function(c){ return c.trim(); }); });
+  var header = rows[0];
+  var sep    = header.map(function(){ return '---'; });
+  var table  = [header, sep].concat(rows.slice(1));
+  return table.map(function(r){ return '| ' + r.join(' | ') + ' |'; }).join('\n');
+}
+
+function respHtml(text, label, labelClass, cardClass) {
+  var now = new Date().toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'});
+  return '<div class="resp ' + cardClass + '">' +
+    '<div class="resp-head"><span class="tag ' + labelClass + '">' + label + '</span>' +
+    '<span class="tag">' + now + '</span></div>' +
+    '<div class="resp-body">' + fmtResp(text) + '</div></div>';
+}
+
+function loadingHtml(msg) {
+  return '<div class="resp"><div class="loading"><div class="dots"><span></span><span></span><span></span></div>' + msg + '</div></div>';
+}
+
+function errHtml(msg) {
+  return '<div class="resp"><div class="err-msg">⚠ ' + esc(msg) + '</div></div>';
+}
+
+function fmtResp(text) {
+  // Code blocks
+  text = text.replace(/```[\w]*\n?([\s\S]*?)```/g, function(_, code) {
+    var id = 'c' + Math.random().toString(36).slice(2,6);
+    var trimmed = code.trim();
+    return '<div class="code-block" id="' + id + '" data-code="' + trimmed.replace(/"/g, '&quot;') + '">' + esc(trimmed) +
+      '<button class="copy-btn" onclick="copyCode(\'' + id + '\')">copy</button></div>';
+  });
+  // Inline code
+  text = text.replace(/`([^`]+)`/g,
+    '<code style="font-family:\'DM Mono\',monospace;color:var(--accent);font-size:11px;' +
+    'background:var(--code-bg);padding:1px 5px;border-radius:3px;">$1</code>');
+  // Headers
+  text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  text = text.replace(/^## (.+)$/gm,  '<h3>$1</h3>');
+  // Bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Lists
+  text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
+  text = text.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  // Paragraphs
+  var lines = text.split('\n'); var r = '';
+  for (var i = 0; i < lines.length; i++) {
+    var t = lines[i].trim(); if (!t) continue;
+    if (t[0] === '<' && (t.startsWith('<h3>')||t.startsWith('<ul>')||t.startsWith('<div')||t.startsWith('<table'))) r += t + '\n';
+    else if (!t.startsWith('<li>')) r += '<p>' + t + '</p>\n';
+  }
+  return r;
+}
+
+function esc(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyCode(id) {
+  var el   = document.getElementById(id);
+  var btn  = el.querySelector('.copy-btn');
+  var text = el.getAttribute('data-code') || '';
+  navigator.clipboard.writeText(text).then(function(){
+    btn.textContent = '✓';
+    setTimeout(function(){ btn.textContent = 'copy'; }, 1500);
+  });
+}
+
+// ── HISTORY ───────────────────────────────────────────────────
+function saveHistory(q, a, scene) {
+  queryHistory.unshift({ q:q, a:a, scene:scene });
+  if (queryHistory.length > 20) queryHistory.pop();
+  localStorage.setItem('xpert_history', JSON.stringify(queryHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  var el = document.getElementById('historyList');
+  if (!queryHistory.length) { el.innerHTML = '<p class="hint">暂无记录。</p>'; return; }
+  el.innerHTML = queryHistory.slice(0,6).map(function(item, i){
+    return '<div onclick="loadHistory(' + i + ')" style="padding:9px 12px;background:var(--surface2);' +
+      'border-radius:4px;margin-bottom:5px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px">' +
+      '<span style="font-size:12px;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(item.q) + '</span>' +
+      '<span style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace;flex-shrink:0">' + esc(item.scene) + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function loadHistory(i) {
+  var item = queryHistory[i];
+  document.getElementById('questionInput').value = item.q;
+  lastAskQ = item.q; lastAskA = item.a; currentScene = item.scene;
+  document.querySelectorAll('#sceneChips .chip').forEach(function(c){
+    c.classList.toggle('on', c.textContent.trim() === item.scene);
+  });
+  document.getElementById('sceneBadge').textContent = item.scene;
+  document.getElementById('askResp').innerHTML = respHtml(item.a, 'Solution', 'tag-green', '');
+  appendAskActions();
+  showPage('ask', document.querySelectorAll('.nav-btn')[0]);
+}
+</script>
+</body>
+</html>

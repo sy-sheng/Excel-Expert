@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel Expert</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f100e;
+    --surface: #171916;
+    --surface2: #1d201b;
+    --border: #282b26;
+    --border-l: #333730;
+    --accent: #b8f03e;
+    --accent-dim: #7aab1e;
+    --teal: #4ec9b0;
+    --warn: #f0c040;
+    --text: #e6e8d2;
+    --muted: #686e5e;
+    --mid: #9ca890;
+    --error: #f07070;
+    --code-bg: #090a09;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 300;
+    overflow: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  .shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: var(--surface);
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-left: 7px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Tab nav */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 9px 6px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+    text-align: center;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Scrollable content */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .panel { display: none; padding: 12px; }
+  .panel.active { display: flex; flex-direction: column; gap: 10px; }
+
+  /* Scene chips */
+  .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .chip {
+    padding: 4px 9px;
+    border: 1px solid var(--border-l);
+    border-radius: 2px;
+    font-size: 9px;
+    color: var(--muted);
+    cursor: pointer;
+    background: transparent;
+    letter-spacing: 0.3px;
+    transition: all 0.12s;
+    font-family: 'DM Mono', monospace;
+  }
+  .chip:hover { border-color: var(--accent-dim); color: var(--text); }
+  .chip.active { border-color: var(--accent); color: var(--accent); background: rgba(184,240,62,0.07); }
+
+  /* Input area */
+  .input-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .input-top {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .scene-badge {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+  }
+
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 300;
+    line-height: 1.6;
+    padding: 10px;
+    resize: none;
+    outline: none;
+    min-height: 90px;
+  }
+  textarea::placeholder { color: var(--muted); }
+
+  .input-footer {
+    padding: 7px 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+  }
+
+  /* Read from sheet button */
+  .btn-sheet {
+    font-size: 9px;
+    color: var(--teal);
+    background: transparent;
+    border: 1px solid rgba(78,201,176,0.3);
+    border-radius: 2px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.5px;
+    transition: all 0.12s;
+  }
+  .btn-sheet:hover { border-color: var(--teal); background: rgba(78,201,176,0.06); }
+
+  /* Buttons */
+  .btn {
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 7px 13px;
+    border-radius: 2px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #0f100e; }
+  .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border-l); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--accent-dim); color: var(--text); }
+  .btn-warn { background: transparent; border: 1px solid var(--warn); color: var(--warn); font-size: 9px; }
+  .btn-warn:hover:not(:disabled) { background: rgba(240,192,64,0.07); }
+  .btn-warn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-teal { background: transparent; border: 1px solid var(--teal); color: var(--teal); font-size: 9px; }
+  .btn-teal:hover:not(:disabled) { background: rgba(78,201,176,0.07); }
+  .btn-teal:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-sm { padding: 5px 10px; font-size: 9px; }
+
+  /* Response */
+  .resp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease;
+  }
+  .resp-card.warn { border-color: rgba(240,192,64,0.25); }
+  .resp-card.teal { border-color: rgba(78,201,176,0.25); }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+  .resp-head {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .resp-label { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; font-family: 'DM Mono', monospace; }
+  .c-green { color: var(--accent); }
+  .c-warn  { color: var(--warn); }
+  .c-teal  { color: var(--teal); }
+  .resp-meta { font-size: 8px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  .resp-body {
+    padding: 10px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .resp-body h3 { font-family: 'DM Serif Display', serif; font-size: 13px; color: var(--accent); margin: 14px 0 6px; font-weight: 400; }
+  .resp-body h3:first-child { margin-top: 0; }
+  .resp-body p { margin-bottom: 7px; }
+  .resp-body p:last-child { margin-bottom: 0; }
+  .resp-body ul { margin: 4px 0 8px; padding-left: 0; list-style: none; }
+  .resp-body li { padding: 1px 0 1px 14px; position: relative; color: var(--mid); font-size: 11px; }
+  .resp-body li::before { content: '→'; position: absolute; left: 0; color: var(--accent-dim); font-size: 10px; top: 3px; }
+
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--accent);
+    border-radius: 2px;
+    padding: 8px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    margin: 6px 0;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    position: relative;
+  }
+  .copy-btn {
+    position: absolute; top: 4px; right: 6px;
+    background: transparent; border: 1px solid var(--border-l);
+    color: var(--muted); font-family: 'DM Mono', monospace;
+    font-size: 8px; padding: 2px 6px; border-radius: 2px;
+    cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
+    transition: all 0.12s;
+  }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Insert to Excel button */
+  .insert-btn {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 8px;
+    color: var(--teal);
+    background: transparent;
+    border: 1px solid rgba(78,201,176,0.3);
+    border-radius: 2px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.5px;
+    transition: all 0.12s;
+  }
+  .insert-btn:hover { border-color: var(--teal); background: rgba(78,201,176,0.06); }
+
+  /* Action row */
+  .action-row {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .action-hint { font-size: 9px; color: var(--muted); font-family: 'DM Mono', monospace; margin-left: auto; }
+
+  /* Loading */
+  .loading {
+    padding: 18px 10px;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-size: 11px; font-family: 'DM Mono', monospace;
+  }
+  .dots { display: flex; gap: 3px; }
+  .dots span {
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--accent); animation: bounce 1.2s ease-in-out infinite;
+  }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+
+  .err { padding: 10px; color: var(--error); font-size: 11px; font-family: 'DM Mono', monospace; }
+
+  /* Sample test panels */
+  .sample-panels { display: flex; gap: 8px; }
+  .sample-panel { flex: 1; }
+  .sample-panel-label {
+    font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
+    font-family: 'DM Mono', monospace; margin-bottom: 5px;
+  }
+  .l-teal { color: var(--teal); }
+  .l-warn { color: var(--warn); }
+
+  .upload-zone {
+    border: 1px dashed var(--border-l); border-radius: 2px;
+    padding: 10px 6px; text-align: center; cursor: pointer;
+    transition: border-color 0.15s; position: relative; min-height: 52px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .upload-zone:hover { border-color: var(--accent-dim); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .upload-text { font-size: 9px; color: var(--muted); font-family: 'DM Mono', monospace; line-height: 1.7; pointer-events: none; }
+
+  .data-preview {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-left: 2px solid var(--teal); border-radius: 2px;
+    padding: 6px 8px; margin-top: 5px; font-family: 'DM Mono', monospace;
+    font-size: 9px; color: var(--accent); max-height: 80px;
+    overflow-y: auto; white-space: pre;
+  }
+  .data-preview.expected { border-left-color: var(--warn); }
+
+  /* KB */
+  .kb-entry {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 2px; padding: 7px 10px; margin-bottom: 5px; position: relative;
+  }
+  .kb-tag { font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--teal); font-family: 'DM Mono', monospace; margin-bottom: 3px; }
+  .kb-text { font-size: 11px; color: var(--mid); line-height: 1.5; padding-right: 18px; }
+  .kb-del { position: absolute; top: 5px; right: 7px; background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; transition: color 0.12s; }
+  .kb-del:hover { color: var(--error); }
+
+  .kb-input {
+    background: var(--code-bg); border: 1px solid var(--border-l);
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 11px;
+    padding: 6px 9px; border-radius: 2px; outline: none; width: 100%;
+    transition: border-color 0.15s; margin-bottom: 5px;
+  }
+  .kb-input:focus { border-color: var(--accent); }
+  .kb-input::placeholder { color: var(--muted); }
+  .kb-textarea { resize: vertical; min-height: 55px; }
+
+  .kb-used {
+    display: inline-block; font-size: 8px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--teal); font-family: 'DM Mono', monospace;
+    border: 1px solid var(--teal); border-radius: 2px; padding: 1px 5px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .kb-used.show { opacity: 1; }
+
+  /* Settings */
+  .settings-row { display: flex; gap: 7px; align-items: center; }
+  .settings-input {
+    flex: 1; background: var(--code-bg); border: 1px solid var(--border-l);
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px;
+    padding: 7px 9px; border-radius: 2px; outline: none; transition: border-color 0.15s;
+  }
+  .settings-input:focus { border-color: var(--accent); }
+  .settings-input::placeholder { color: var(--muted); }
+
+  .divider { height: 1px; background: var(--border); margin: 8px 0; }
+  .section-label { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 7px; }
+
+  /* History */
+  .hist-item {
+    padding: 7px 9px; border: 1px solid var(--border); border-radius: 2px;
+    margin-bottom: 4px; cursor: pointer; transition: border-color 0.12s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .hist-item:hover { border-color: var(--border-l); }
+  .hist-q { font-size: 10px; color: var(--mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75%; }
+  .hist-tag { font-size: 9px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  .sheet-info {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-left: 2px solid var(--teal); border-radius: 2px;
+    padding: 6px 9px; font-size: 10px; color: var(--teal);
+    font-family: 'DM Mono', monospace; margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <span class="logo">Excel Expert</span>
+      <span class="logo-sub">Audit</span>
+    </div>
+    <div class="header-right">
+      <div class="status-dot"></div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('ask',this)">Ask</button>
+    <button class="tab" onclick="switchTab('test',this)">Test</button>
+    <button class="tab" onclick="switchTab('kb',this)">KB <span id="kbCountBadge" style="color:var(--teal)"></span></button>
+    <button class="tab" onclick="switchTab('settings',this)">⚙</button>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ── ASK PANEL ── -->
+    <div class="panel active" id="panel-ask">
+
+      <div class="chips" id="sceneChips">
+        <button class="chip active" onclick="setScene(this,'General')">General</button>
+        <button class="chip" onclick="setScene(this,'Formula')">Formula</button>
+        <button class="chip" onclick="setScene(this,'Data Cleaning')">Cleaning</button>
+        <button class="chip" onclick="setScene(this,'Bank Rec')">Bank Rec</button>
+        <button class="chip" onclick="setScene(this,'Lead Schedule')">Lead Sched</button>
+        <button class="chip" onclick="setScene(this,'VBA')">VBA</button>
+        <button class="chip" onclick="setScene(this,'Audit')">Audit</button>
+      </div>
+
+      <div class="input-wrap">
+        <div class="input-top">
+          <span class="label">Question</span>
+          <span class="scene-badge" id="sceneBadge">General</span>
+        </div>
+        <textarea id="questionInput" placeholder="e.g. I need to match GL entries to bank statement lines — amounts are exact but dates can differ by ±2 days. Show unmatched rows." rows="5"></textarea>
+        <div class="input-footer">
+          <button class="btn-sheet" onclick="readSelectionToInput()" title="Paste selected cell range description into question">⬇ Read selection</button>
+          <button class="btn btn-primary" id="askBtn" onclick="askQuestion()">Ask →</button>
+        </div>
+      </div>
+
+      <div id="sheetContext" style="display:none" class="sheet-info"></div>
+      <div id="kbUsed" class="kb-used">KB injected</div>
+
+      <div id="responseArea"></div>
+
+    </div>
+
+    <!-- ── TEST PANEL ── -->
+    <div class="panel" id="panel-test">
+
+      <p style="font-size:10px;color:var(--muted);line-height:1.6;">Upload input data + expected result, then run to see ✅ MATCH / ❌ MISMATCH per row.</p>
+
+      <div class="sample-panels">
+        <div class="sample-panel">
+          <div class="sample-panel-label l-teal">① Input Data</div>
+          <div class="upload-zone">
+            <input type="file" accept=".csv,.txt" id="fileInput" onchange="loadFile(event,'input')">
+            <div class="upload-text" id="txtInput">Drop CSV<br>or browse</div>
+          </div>
+          <div id="previewInput"></div>
+          <div id="clearInput" style="display:none;margin-top:5px">
+            <button class="btn btn-ghost btn-sm" onclick="clearFile('input')" style="width:100%">Clear</button>
+          </div>
+        </div>
+
+        <div class="sample-panel">
+          <div class="sample-panel-label l-warn">② Expected</div>
+          <div class="upload-zone">
+            <input type="file" accept=".csv,.txt" id="fileExpected" onchange="loadFile(event,'expected')">
+            <div class="upload-text" id="txtExpected">Drop CSV<br>or browse</div>
+          </div>
+          <div id="previewExpected"></div>
+          <div id="clearExpected" style="display:none;margin-top:5px">
+            <button class="btn btn-ghost btn-sm" onclick="clearFile('expected')" style="width:100%">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-teal" id="btnRunTest" onclick="runTest()" style="flex:1">◈ Run Test</button>
+        <button class="btn btn-ghost btn-sm" onclick="readSheetToInput()" title="Read selected range from Excel as input data">⬇ From Sheet</button>
+      </div>
+
+      <div id="testResult"></div>
+
+    </div>
+
+    <!-- ── KB PANEL ── -->
+    <div class="panel" id="panel-kb">
+      <p style="font-size:10px;color:var(--muted);line-height:1.6;">Entries are keyword-matched and injected into every question. Add client quirks, firm rules, past solutions.</p>
+      <div id="kbList"></div>
+      <div class="divider"></div>
+      <div class="section-label">Add entry</div>
+      <input type="text" class="kb-input" id="kbTag" placeholder="Tag (e.g. Client: DBS · Rule: FX · Workflow: Bank Rec)">
+      <textarea class="kb-input kb-textarea" id="kbText" placeholder="e.g. ABC Corp GL always has a TOTAL row at the bottom — delete before processing. Entity codes: SG-XXXX or HK-XXXX."></textarea>
+      <button class="btn btn-ghost btn-sm" onclick="addKb()">+ Add</button>
+    </div>
+
+    <!-- ── SETTINGS PANEL ── -->
+    <div class="panel" id="panel-settings">
+      <div class="section-label">Anthropic API Key</div>
+      <div class="settings-row">
+        <input type="password" class="settings-input" id="apiKey" placeholder="sk-ant-...">
+        <button class="btn btn-primary btn-sm" onclick="saveKey()">Save</button>
+      </div>
+      <p style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;">
+        Stored locally on this device only. Never sent anywhere except <span style="color:var(--teal)">api.anthropic.com</span>.
+      </p>
+      <div class="divider"></div>
+      <div class="section-label">Recent</div>
+      <div id="historyList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── OFFICE.JS INIT ──────────────────────────────────────────
+Office.onReady(() => {
+  const key = localStorage.getItem('xpert_key');
+  if (key) document.getElementById('apiKey').value = key;
+  renderKb();
+  renderHistory();
+});
+
+// ── STATE ──────────────────────────────────────────────────
+let currentScene = 'General';
+let history = JSON.parse(localStorage.getItem('xpert_history') || '[]');
+let kb = JSON.parse(localStorage.getItem('xpert_kb') || '[]');
+let sampleInput = null, sampleExpected = null;
+let lastAnswer = '', lastQuestion = '';
+
+// ── TABS ───────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ── SETTINGS ──────────────────────────────────────────────
+function saveKey() {
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key.startsWith('sk-')) { alert('Enter a valid API Key (starts with sk-)'); return; }
+  localStorage.setItem('xpert_key', key);
+  const btn = event.target; btn.textContent = '✓';
+  setTimeout(() => btn.textContent = 'Save', 1500);
+}
+
+// ── SCENE ─────────────────────────────────────────────────
+function setScene(el, scene) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentScene = scene;
+  document.getElementById('sceneBadge').textContent = scene;
+}
+
+// ── EXCEL INTEGRATION ─────────────────────────────────────
+async function readSelectionToInput() {
+  try {
+    await Excel.run(async ctx => {
+      const range = ctx.workbook.getSelectedRange();
+      range.load(['address','values','rowCount','columnCount']);
+      await ctx.sync();
+      const addr = range.address;
+      const rows = range.rowCount, cols = range.columnCount;
+      const preview = range.values.slice(0,3).map(r => r.join('\t')).join('\n');
+      const desc = `Selected range: ${addr} (${rows} rows × ${cols} cols)\nPreview:\n${preview}`;
+      const ta = document.getElementById('questionInput');
+      ta.value = (ta.value ? ta.value + '\n\n' : '') + desc;
+      document.getElementById('sheetContext').textContent = `📋 ${addr} — ${rows}×${cols}`;
+      document.getElementById('sheetContext').style.display = 'block';
+    });
+  } catch(e) {
+    document.getElementById('sheetContext').textContent = '⚠ Select a range in Excel first';
+    document.getElementById('sheetContext').style.display = 'block';
+  }
+}
+
+async function readSheetToInput() {
+  try {
+    await Excel.run(async ctx => {
+      const range = ctx.workbook.getSelectedRange();
+      range.load(['values']);
+      await ctx.sync();
+      const csv = range.values.slice(0,11).map(r => r.join(',')).join('\n');
+      sampleInput = { raw: csv };
+      document.getElementById('previewInput').innerHTML = `<div class="data-preview">${escHtml(csv)}</div>`;
+      document.getElementById('clearInput').style.display = 'block';
+      document.getElementById('txtInput').innerHTML = `<span style="color:var(--teal);font-size:9px">✓ From sheet</span>`;
+    });
+  } catch(e) {
+    alert('Select a range in Excel first.');
+  }
+}
+
+async function insertFormulaToCell(formula) {
+  try {
+    await Excel.run(async ctx => {
+      const cell = ctx.workbook.getSelectedRange();
+      cell.values = [[formula]];
+      await ctx.sync();
+    });
+  } catch(e) {
+    alert('Select a cell in Excel first, then click Insert.');
+  }
+}
+
+// ── KB ─────────────────────────────────────────────────────
+function addKb() {
+  const tag = document.getElementById('kbTag').value.trim();
+  const text = document.getElementById('kbText').value.trim();
+  if (!text) return;
+  kb.unshift({ id: Date.now(), tag: tag || 'General', text });
+  localStorage.setItem('xpert_kb', JSON.stringify(kb));
+  document.getElementById('kbTag').value = '';
+  document.getElementById('kbText').value = '';
+  renderKb();
+  saveKbToServer();
+}
+
+function deleteKb(id) {
+  kb = kb.filter(e => e.id !== id);
+  localStorage.setItem('xpert_kb', JSON.stringify(kb));
+  renderKb();
+  saveKbToServer();
+}
+
+function renderKb() {
+  const el = document.getElementById('kbList');
+  const badge = document.getElementById('kbCountBadge');
+  badge.textContent = kb.length > 0 ? `(${kb.length})` : '';
+  el.innerHTML = kb.length === 0
+    ? '<p style="font-size:10px;color:var(--muted);padding:4px 0">No entries yet.</p>'
+    : kb.map(e => `
+        <div class="kb-entry">
+          <div class="kb-tag">${escHtml(e.tag)}</div>
+          <div class="kb-text">${escHtml(e.text)}</div>
+          <button class="kb-del" onclick="deleteKb(${e.id})">×</button>
+        </div>`).join('');
+}
+
+async function saveKbToServer() {
+  try { await fetch('/api/kb', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(kb) }); }
+  catch {}
+}
+
+function getRelevantKb(question) {
+  if (kb.length === 0) return { text: '', used: false };
+  const qWords = question.toLowerCase().split(/\W+/).filter(w => w.length > 3);
+  const scored = kb.map(e => {
+    const body = (e.tag + ' ' + e.text).toLowerCase();
+    return { ...e, score: qWords.filter(w => body.includes(w)).length };
+  }).sort((a,b) => b.score - a.score);
+  const top = scored.filter(e => e.score > 0).slice(0,4);
+  const toUse = top.length > 0 ? top : kb.slice(0,2);
+  return {
+    text: '\n\n## Firm / Client Knowledge\n' + toUse.map(e => `[${e.tag}]: ${e.text}`).join('\n'),
+    used: true
+  };
+}
+
+// ── SAMPLE FILES ───────────────────────────────────────────
+function loadFile(event, slot) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => parseFile(e.target.result, slot);
+  reader.readAsText(file);
+}
+
+function parseFile(text, slot) {
+  const lines = text.trim().split('\n').slice(0,11);
+  if (slot === 'input') {
+    sampleInput = { raw: lines.join('\n') };
+    document.getElementById('previewInput').innerHTML = `<div class="data-preview">${escHtml(lines.join('\n'))}</div>`;
+    document.getElementById('clearInput').style.display = 'block';
+    document.getElementById('txtInput').innerHTML = `<span style="color:var(--teal);font-size:9px">✓ ${lines.length-1} rows</span>`;
+  } else {
+    sampleExpected = { raw: lines.join('\n') };
+    document.getElementById('previewExpected').innerHTML = `<div class="data-preview expected">${escHtml(lines.join('\n'))}</div>`;
+    document.getElementById('clearExpected').style.display = 'block';
+    document.getElementById('txtExpected').innerHTML = `<span style="color:var(--warn);font-size:9px">✓ ${lines.length-1} rows</span>`;
+  }
+}
+
+function clearFile(slot) {
+  if (slot === 'input') {
+    sampleInput = null;
+    document.getElementById('previewInput').innerHTML = '';
+    document.getElementById('clearInput').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('txtInput').innerHTML = 'Drop CSV<br>or browse';
+  } else {
+    sampleExpected = null;
+    document.getElementById('previewExpected').innerHTML = '';
+    document.getElementById('clearExpected').style.display = 'none';
+    document.getElementById('fileExpected').value = '';
+    document.getElementById('txtExpected').innerHTML = 'Drop CSV<br>or browse';
+  }
+}
+
+// ── SYSTEM PROMPT ──────────────────────────────────────────
+function buildSystemPrompt(scene, question) {
+  const { text: kbText, used } = getRelevantKb(question);
+  window._kbUsed = used;
+  return `You are a senior Excel expert with Big 4 audit experience in Singapore and Hong Kong. Fluent in IFRS/SFRS, working paper standards, and Big 4 audit methodology.
+
+Rules:
+1. Be precise and immediately actionable
+2. Show all formulas in code blocks; explain each argument on one line
+3. Rank multiple approaches and state trade-offs
+4. Always end with "### ⚠ Edge Cases" — list 3+ failure modes with fixes
+5. For VBA: comment every block, include On Error handling
+6. Respond in English
+7. When giving a standalone formula (not embedded in steps), add a line starting with INSERT_FORMULA: followed by just the formula so it can be inserted directly into Excel${kbText}
+
+Scene: ${scene}`;
+}
+
+// ── ASK ────────────────────────────────────────────────────
+async function askQuestion() {
+  const q = document.getElementById('questionInput').value.trim();
+  if (!q) return;
+  document.getElementById('askBtn').disabled = true;
+  setResp(loadingHtml('Analysing...'));
+  try {
+    const ans = await callClaude(buildSystemPrompt(currentScene, q), q);
+    lastAnswer = ans; lastQuestion = q;
+    setResp(respCardHtml(ans, 'Solution', 'c-green', ''));
+    appendActionRow();
+    saveHistory(q, ans, currentScene);
+    if (window._kbUsed) { const b = document.getElementById('kbUsed'); b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),3000); }
+  } catch(e) { setResp(errHtml(e.message)); }
+  finally { document.getElementById('askBtn').disabled = false; }
+}
+
+// ── VERIFY LOGIC ───────────────────────────────────────────
+async function verifyLogic() {
+  if (!lastAnswer) return;
+  const btn = document.getElementById('btnVL'); if(btn) btn.disabled=true;
+  appendResp(loadingHtml('Checking logic...'), 'vl-load');
+  const prompt = `User asked: "${lastQuestion}"\n\nSolution:\n---\n${lastAnswer}\n---\n\nLogical validation: for each formula/step, identify exact failure conditions, rate risk (HIGH/MEDIUM/LOW), give a fix. Check: blanks, duplicate keys, text-numbers, merged cells, date format (DD/MM vs MM/DD), >50k rows, IFRS-specific issues.`;
+  try {
+    const r = await callClaude('You are a rigorous Excel auditor.', prompt);
+    replaceNode('vl-load', respCardHtml(r,'⚠ Logic Check','c-warn','warn'));
+  } catch(e) { replaceNode('vl-load', errHtml(e.message)); }
+  finally { if(btn) btn.disabled=false; }
+}
+
+// ── RUN TEST ───────────────────────────────────────────────
+async function runTest() {
+  if (!lastAnswer && !sampleInput) {
+    document.getElementById('testResult').innerHTML = errHtml('Ask a question first (in the Ask tab), then upload sample data here.');
+    return;
+  }
+  if (!sampleInput) { document.getElementById('testResult').innerHTML = errHtml('Upload input data first.'); return; }
+  const btn = document.getElementById('btnRunTest'); if(btn) btn.disabled=true;
+  document.getElementById('testResult').innerHTML = loadingHtml('Running formula on data...');
+
+  const expectedSection = sampleExpected
+    ? `\nExpected result:\n\`\`\`\n${sampleExpected.raw}\n\`\`\``
+    : '\n(No expected result — just simulate output.)';
+
+  const matchInstr = sampleExpected
+    ? `5. Compare simulated output vs expected row-by-row:\n   - ✅ MATCH\n   - ❌ MISMATCH — show actual vs expected, explain why\n   - ⚠ PARTIAL — close but not identical\n6. Summary: X/Y rows matched. Verdict: PASS / FAIL / PARTIAL`
+    : `5. Show predicted output for each row in a clear table.`;
+
+  const prompt = `User asked: "${lastQuestion || '(no question — simulate this formula on the data)'}"
+
+Solution:
+---
+${lastAnswer || '(no solution yet — just analyse the data structure)'}
+---
+
+Input data (CSV, first 10 rows):
+\`\`\`
+${sampleInput.raw}
+\`\`\`
+${expectedSection}
+
+Instructions:
+1. Simulate the formula/logic step-by-step on input data
+2. Trace through logic for first few rows with actual values
+3. Show computed result per row
+4. Flag rows where formula errors or gives unexpected results
+${matchInstr}
+
+Reference actual column names and values.`;
+
+  try {
+    const r = await callClaude('You are a rigorous Excel formula tester. Use tables where possible.', prompt);
+    document.getElementById('testResult').innerHTML = respCardHtml(r,'◈ Test Result','c-teal','teal');
+  } catch(e) { document.getElementById('testResult').innerHTML = errHtml(e.message); }
+  finally { if(btn) btn.disabled=false; }
+}
+
+// ── API ────────────────────────────────────────────────────
+async function callClaude(system, msg) {
+  const key = localStorage.getItem('xpert_key');
+  if (!key) throw new Error('No API key — go to ⚙ Settings tab.');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2500, system, messages:[{role:'user',content:msg}] })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.content[0].text;
+}
+
+// ── UI ─────────────────────────────────────────────────────
+function setResp(html) { document.getElementById('responseArea').innerHTML = html; }
+function appendResp(html, id) {
+  const el = document.createElement('div'); el.id = id; el.innerHTML = html;
+  document.getElementById('responseArea').appendChild(el);
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function replaceNode(id, html) {
+  const el = document.getElementById(id);
+  if (el) { const t=document.createElement('div'); t.innerHTML=html; el.replaceWith(t.firstChild); }
+}
+
+function appendActionRow() {
+  const old = document.getElementById('actionRowEl'); if(old) old.remove();
+  const html = `<div id="actionRowEl" style="border:1px solid var(--border);border-top:none;border-radius:0 0 3px 3px;overflow:hidden">
+    <div class="action-row">
+      <button class="btn btn-warn" id="btnVL" onclick="verifyLogic()">⚠ Validate</button>
+      <span class="action-hint" style="font-size:9px">→ Test tab for sample data</span>
+    </div>
+  </div>`;
+  const first = document.querySelector('#responseArea .resp-card');
+  if (first) first.insertAdjacentHTML('afterend', html);
+}
+
+function respCardHtml(text, label, labelClass, cardClass) {
+  const now = new Date().toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'});
+  return `<div class="resp-card ${cardClass}">
+    <div class="resp-head">
+      <span class="resp-label ${labelClass}">${label}</span>
+      <span class="resp-meta">${currentScene} · ${now}</span>
+    </div>
+    <div class="resp-body">${formatResp(text)}</div>
+  </div>`;
+}
+
+function loadingHtml(msg) {
+  return `<div class="resp-card"><div class="loading"><div class="dots"><span></span><span></span><span></span></div>${msg}</div></div>`;
+}
+function errHtml(msg) { return `<div class="resp-card"><div class="err">⚠ ${escHtml(msg)}</div></div>`; }
+
+function formatResp(text) {
+  // Detect INSERT_FORMULA lines and add an insert button
+  text = text.replace(/INSERT_FORMULA:\s*(.+)/g, (_, formula) => {
+    const safe = escHtml(formula.trim());
+    return `<div style="margin:4px 0"><button class="insert-btn" onclick="insertFormulaToCell('${formula.trim().replace(/'/g,"\\'")}')">⬆ Insert into selected cell</button></div>`;
+  });
+
+  text = text.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+    const id = 'c'+Math.random().toString(36).slice(2,6);
+    // Check if this looks like a formula
+    const formula = code.trim();
+    const isFormula = formula.startsWith('=');
+    const insertBtn = isFormula ? `<button class="insert-btn" style="display:block;margin-top:4px" onclick="insertFormulaToCell('${formula.replace(/'/g,"\\'")}')">⬆ Insert into selected cell</button>` : '';
+    return `<div class="code-block" id="${id}">${escHtml(formula)}<button class="copy-btn" onclick="copyCode('${id}')">copy</button></div>${insertBtn}`;
+  });
+  text = text.replace(/`([^`]+)`/g, `<code style="font-family:'DM Mono',monospace;color:var(--accent);font-size:10px;background:var(--code-bg);padding:1px 4px;border-radius:2px;">$1</code>`);
+  text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text);font-weight:500;">$1</strong>');
+  text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
+  text = text.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  const lines = text.split('\n'); let r = '';
+  for (const line of lines) {
+    const t = line.trim(); if (!t) continue;
+    if (t.startsWith('<h3>')||t.startsWith('<ul>')||t.startsWith('<div')||t.startsWith('<button')) r += t+'\n';
+    else if (!t.startsWith('<li>')) r += `<p>${t}</p>\n`;
+  }
+  return r;
+}
+
+function escHtml(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function copyCode(id) {
+  const el = document.getElementById(id);
+  const text = el.innerText.replace('copy','').replace('⬆ Insert into selected cell','').trim();
+  navigator.clipboard.writeText(text).then(()=>{
+    const b=el.querySelector('.copy-btn'); b.textContent='✓';
+    setTimeout(()=>b.textContent='copy',1500);
+  });
+}
+
+// ── HISTORY ────────────────────────────────────────────────
+function saveHistory(q, a, scene) {
+  history.unshift({q,a,scene,time:new Date().toLocaleString('en-SG')});
+  if (history.length>20) history.pop();
+  localStorage.setItem('xpert_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  if (history.length===0) { el.innerHTML='<p style="font-size:10px;color:var(--muted)">No history yet.</p>'; return; }
+  el.innerHTML = history.slice(0,5).map((item,i)=>`
+    <div class="hist-item" onclick="loadHistory(${i})">
+      <span class="hist-q">${escHtml(item.q)}</span>
+      <span class="hist-tag">${item.scene}</span>
+    </div>`).join('');
+}
+
+function loadHistory(i) {
+  const item = history[i];
+  document.getElementById('questionInput').value = item.q;
+  lastQuestion = item.q; lastAnswer = item.a; currentScene = item.scene;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.textContent===item.scene));
+  document.getElementById('sceneBadge').textContent = item.scene;
+  setResp(respCardHtml(item.a,'Solution','c-green',''));
+  appendActionRow();
+  switchTab('ask', document.querySelectorAll('.tab')[0]);
+}
+</script>
+</body>
+</html>
